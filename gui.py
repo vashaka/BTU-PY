@@ -5,6 +5,21 @@ import qrcode
 from PyQt6.QtCore import Qt, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices, QPixmap, QImage
 from PyQt6.QtWidgets import *
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from themes import apply_theme
+
+
+def _btn(widget, role="default"):
+    widget.setProperty("btnRole", role)
+    widget.setCursor(Qt.CursorShape.PointingHandCursor)
+    return widget
+
+
+def _lbl(widget, role=""):
+    if role:
+        widget.setProperty("role", role)
+    return widget
 
 
 class LoginPage(QWidget):
@@ -16,89 +31,53 @@ class LoginPage(QWidget):
         self.logic = logic
 
         # მთავარი Layout - ყველაფერს სვამს ფანჯრის ცენტრში
-        layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        container = QWidget()
+        container.setMaximumWidth(440)
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        layout = QVBoxLayout(container)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(14)
 
         # სათაური
-        self.title = QLabel("Sign in")
+        self.title = _lbl(QLabel("Sign in"), "pageTitle")
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title.setStyleSheet("font-size: 32px; font-weight: bold; color: black; margin-bottom: 10px;")
         layout.addWidget(self.title)
 
-        # ინპუტების საერთო სტილი
-        input_style = """
-            QLineEdit {
-                border: 1px solid #d1d5db;
-                border-radius: 20px;
-                padding: 12px 20px;
-                font-size: 14px;
-                background-color: white;
-                color: black;
-            }
-            QLineEdit:focus {
-                border: 2px solid #008080;
-            }
-        """
-
-        # ველების შექმნა და მაქსიმალური სიგანის შეზღუდვა
         self.user_input = QLineEdit()
         self.user_input.setPlaceholderText("Username")
-        self.user_input.setStyleSheet(input_style)
-        self.user_input.setMaximumWidth(400)  # 🌟 ზღუდავს სიგანეს პირდაპირ ვიჯეტზე
 
         self.pass_input = QLineEdit()
         self.pass_input.setPlaceholderText("Password")
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.pass_input.setStyleSheet(input_style)
-        self.pass_input.setMaximumWidth(400)
 
         layout.addWidget(self.user_input)
         layout.addWidget(self.pass_input)
 
         # ერორების ლეიბლი
-        self.err = QLabel("")
-        self.err.setStyleSheet("color: red; font-size: 13px; font-weight: bold;")
+        self.err = _lbl(QLabel(""), "error")
         self.err.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.err)
 
-        # მთავარი ღილაკი "Sign in"
-        self.btn_login = QPushButton("Sign in")
-        self.btn_login.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_login.setMaximumWidth(400)
-        self.btn_login.setStyleSheet("""
-            QPushButton {
-                background-color: #008080;
-                color: white;
-                border-radius: 20px;
-                padding: 14px;
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 5px;
-            }
-            QPushButton:hover {
-                background-color: #006666;
-            }
-        """)
+        self.btn_login = _btn(QPushButton("Sign in"), "primary")
         self.btn_login.clicked.connect(self.do_login)
         layout.addWidget(self.btn_login)
 
-        # "Don't have an account? Register" ლინკი
         register_layout = QHBoxLayout()
         register_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        lbl_ask = QLabel("Don't have an account?")
-        lbl_ask.setStyleSheet("color: #6b7280; font-size: 13px;")
+        lbl_ask = _lbl(QLabel("Don't have an account?"), "muted")
 
-        self.btn_go_register = QPushButton("Register")
-        self.btn_go_register.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_go_register.setStyleSheet(
-            "QPushButton { color: #008080; font-size: 13px; font-weight: bold; border: none; background: transparent; text-decoration: underline; }")
+        self.btn_go_register = _btn(QPushButton("Register"), "link")
         self.btn_go_register.clicked.connect(self.go_register.emit)
 
         register_layout.addWidget(lbl_ask)
         register_layout.addWidget(self.btn_go_register)
         layout.addLayout(register_layout)
+
+        outer.addWidget(container)
 
     def do_login(self):
         self.err.setText("")
@@ -126,49 +105,34 @@ class RegisterPage(QWidget):
         self.logic = logic
 
         # მთავარი Layout (ელემენტების ცენტრში მოსაქცევად)
-        main_layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        container = QWidget()
+        container.setMaximumWidth(440)
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        main_layout = QVBoxLayout(container)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.setContentsMargins(40, 80, 40, 80)
         main_layout.setSpacing(12)
 
         # 1. სათაური "Create account"
-        self.title = QLabel("Create account")
+        self.title = _lbl(QLabel("Create account"), "pageTitle")
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title.setStyleSheet("font-size: 32px; font-weight: bold; color: black; margin-bottom: 20px;")
         main_layout.addWidget(self.title)
 
-        # 2. ინპუტების სტილი (რუხი ჩარჩო და მომრგვალება)
-        input_style = """
-            QLineEdit {
-                border: 1px solid #d1d5db;
-                border-radius: 20px;
-                padding: 12px 20px;
-                font-size: 14px;
-                background-color: white;
-                color: black;
-            }
-            QLineEdit:focus {
-                border: 2px solid #008080;
-            }
-        """
-
-        # 3. ველების შექმნა (ვიყენებთ ზუსტად შენს ძველ ცვლადებს, ლოგიკა რომ არ აირიოს)
         self.name = QLineEdit()
         self.name.setPlaceholderText("Name")
-        self.name.setStyleSheet(input_style)
 
         self.email = QLineEdit()
         self.email.setPlaceholderText("Email")
-        self.email.setStyleSheet(input_style)
 
         self.pw = QLineEdit()
         self.pw.setPlaceholderText("Password")
         self.pw.setEchoMode(QLineEdit.EchoMode.Password)
-        self.pw.setStyleSheet(input_style)
 
         self.user = QLineEdit()
         self.user.setPlaceholderText("Username (@handle)")
-        self.user.setStyleSheet(input_style)
 
         main_layout.addWidget(self.name)
         main_layout.addWidget(self.email)
@@ -176,55 +140,27 @@ class RegisterPage(QWidget):
         main_layout.addWidget(self.user)
 
         # ერორების გამოსატანი ლეიბლი (რომელსაც შენი do_reg ფუნქცია იყენებს)
-        self.err = QLabel("")
-        self.err.setStyleSheet("color: red; font-size: 13px; font-weight: bold;")
+        self.err = _lbl(QLabel(""), "error")
         self.err.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(self.err)
 
-        # 4. მთავარი ღილაკი "Create account"
-        self.btn_register = QPushButton("Create account")
-        self.btn_register.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_register.setStyleSheet("""
-            QPushButton {
-                background-color: #008080;
-                color: white;
-                border-radius: 20px;
-                padding: 14px;
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 10px;
-            }
-            QPushButton:hover {
-                background-color: #006666;
-            }
-        """)
+        self.btn_register = _btn(QPushButton("Create account"), "primary")
         self.btn_register.clicked.connect(self.do_reg)
         main_layout.addWidget(self.btn_register)
 
-        # 5. "Already have an account? Log in" სექცია
         login_layout = QHBoxLayout()
         login_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        lbl_ask = QLabel("Already have an account?")
-        lbl_ask.setStyleSheet("color: #6b7280; font-size: 13px;")
+        lbl_ask = _lbl(QLabel("Already have an account?"), "muted")
 
-        self.btn_go_login = QPushButton("Log in")
-        self.btn_go_login.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_go_login.setStyleSheet("""
-            QPushButton {
-                color: #008080;
-                font-size: 13px;
-                font-weight: bold;
-                border: none;
-                background: transparent;
-                text-decoration: underline;
-            }
-        """)
+        self.btn_go_login = _btn(QPushButton("Log in"), "link")
         self.btn_go_login.clicked.connect(self.go_login.emit)
 
         login_layout.addWidget(lbl_ask)
         login_layout.addWidget(self.btn_go_login)
         main_layout.addLayout(login_layout)
+
+        outer.addWidget(container)
 
     def do_reg(self):
         self.err.setText("")
@@ -274,6 +210,7 @@ class RegisterPage(QWidget):
 
 class DashboardPage(QWidget):
     logged_out = pyqtSignal()
+    go_analytics = pyqtSignal()
 
     def __init__(self, logic):
         super().__init__()
@@ -282,12 +219,17 @@ class DashboardPage(QWidget):
 
         # მთავარი მაკეტი (Layout)
         main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
         main_layout.setContentsMargins(15, 15, 15, 15)
 
-        # ფიქსირებული სიგანის ძირითადი ბლოკი
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         content_widget = QWidget()
-        content_widget.setFixedWidth(380)
+        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QVBoxLayout(content_widget)
         layout.setSpacing(6)  # მჭიდრო დაშორება ელემენტებს შორის
@@ -295,78 +237,25 @@ class DashboardPage(QWidget):
 
         # --- 1. ზედა ზოლი (Dark Mode და Logout) ---
         top_layout = QHBoxLayout()
-        self.btn_theme = QPushButton("Dark Mode")
-        self.btn_theme.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_theme.setStyleSheet("""
-            QPushButton {
-                background-color: white; color: black; border: 1px solid #d1d5db;
-                border-radius: 12px; padding: 4px 10px; font-size: 11px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #f3f4f6; }
-        """)
-        self.btn_theme.clicked.connect(self.toggle_theme)
+        self.btn_analytics = _btn(QPushButton("Analytics"), "chip")
+        self.btn_analytics.clicked.connect(self.go_analytics.emit)
 
-        self.logout_btn = QPushButton("Log out")
-        self.logout_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.logout_btn.setStyleSheet("""
-            QPushButton {
-                color: #6b7280; font-size: 11px; font-weight: bold;
-                border: none; background: transparent; text-decoration: underline;
-            }
-            QPushButton:hover { color: #dc2626; }
-        """)
+        self.logout_btn = _btn(QPushButton("Log out"), "ghost")
         self.logout_btn.clicked.connect(self.logout)
 
-        top_layout.addWidget(self.btn_theme)
+        top_layout.addWidget(self.btn_analytics)
         top_layout.addStretch()
         top_layout.addWidget(self.logout_btn)
         layout.addLayout(top_layout)
 
-        # დიზაინის საერთო სტილები
-        input_style = """
-            QLineEdit, QTextEdit {
-                border: 1px solid #d1d5db; border-radius: 10px;
-                padding: 6px 12px; font-size: 12px; background-color: white; color: black;
-            }
-            QLineEdit:focus, QTextEdit:focus { border: 2px solid #008080; }
-        """
-
-        main_btn_style = """
-            QPushButton {
-                background-color: #008080; color: white; border-radius: 10px;
-                padding: 8px; font-size: 12px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #006666; }
-        """
-
-        secondary_btn_style = """
-            QPushButton {
-                background-color: white; color: black; border: 1px solid #d1d5db;
-                border-radius: 10px; padding: 6px; font-size: 11px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #f3f4f6; }
-            QPushButton:disabled { background-color: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; }
-        """
-
-        # --- 2. საჯარო პროფილის სექცია ---
-        share_lbl = QLabel("Your public profile:")
-        share_lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #4b5563; margin-top: 2px;")
+        share_lbl = _lbl(QLabel("Your public profile:"), "muted")
         layout.addWidget(share_lbl)
 
         share_layout = QHBoxLayout()
         self.share_box = QLineEdit()
         self.share_box.setReadOnly(True)
-        self.share_box.setStyleSheet(input_style)
 
-        copyb = QPushButton("Copy")
-        copyb.setCursor(Qt.CursorShape.PointingHandCursor)
-        copyb.setStyleSheet("""
-                    QPushButton {
-                        background-color: #008080; color: white; border-radius: 8px;
-                        padding: 5px 12px; font-size: 11px; font-weight: bold;
-                    }
-                    QPushButton:hover { background-color: #006666; }
-                """)
+        copyb = _btn(QPushButton("Copy"), "primary")
         copyb.clicked.connect(self.copy_url)
         share_layout.addWidget(self.share_box)
         share_layout.addWidget(copyb)
@@ -378,31 +267,27 @@ class DashboardPage(QWidget):
         qr_container.setContentsMargins(0, 0, 0, 0)  # 👈 აშორებს შიდა დაშორებებს, რაც მაღლა სწევს კოდს
 
         self.qr_label = QLabel()
-        self.qr_label.setFixedSize(160, 160)  # 👈 160x160 იდეალური ზომაა, რომ ინტერფეისი ზემოთ აიტანოს
+        self.qr_label.setMinimumSize(120, 120)
+        self.qr_label.setMaximumSize(180, 180)
         self.qr_label.setScaledContents(True)
 
         qr_container.addWidget(self.qr_label)
         layout.addLayout(qr_container)
 
         # --- 3. PROFILE სექცია ---
-        lbl_prof = QLabel("Profile Settings")
-        lbl_prof.setStyleSheet(
-            "font-size: 13px; font-weight: bold; color: #111827; margin-top: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px;")
+        lbl_prof = _lbl(QLabel("Profile Settings"), "sectionTitle")
         layout.addWidget(lbl_prof)
 
-        # 🌟 ავატარის ბლოკის გასწორება ზუსტად ცენტრში
         avatar_layout = QHBoxLayout()
         avatar_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.avatar_label = QLabel()
-        self.avatar_label.setFixedSize(120, 120)
+        self.avatar_label = _lbl(QLabel(), "avatar")
+        self.avatar_label.setMinimumSize(80, 80)
+        self.avatar_label.setMaximumSize(140, 140)
         self.avatar_label.setScaledContents(True)
-        self.avatar_label.setStyleSheet("border: 2px solid #008080; border-radius: 30px; background-color: #f3f4f6;")
+        self.avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.btn_pic = QPushButton("Change Photo")
-        self.btn_pic.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_pic.setStyleSheet(secondary_btn_style)
-        self.btn_pic.setFixedWidth(100)
+        self.btn_pic = _btn(QPushButton("Change Photo"), "secondary")
         self.btn_pic.clicked.connect(self.choose_profile_pic)
 
         avatar_layout.addWidget(self.avatar_label)
@@ -412,128 +297,138 @@ class DashboardPage(QWidget):
 
         self.disp_name = QLineEdit()
         self.disp_name.setPlaceholderText("Display Name")
-        self.disp_name.setStyleSheet(input_style)
         layout.addWidget(self.disp_name)
 
         self.bio = QTextEdit()
         self.bio.setPlaceholderText("Bio...")
-        self.bio.setFixedHeight(40)
-        self.bio.setStyleSheet(input_style)
+        self.bio.setMinimumHeight(40)
+        self.bio.setMaximumHeight(120)
         layout.addWidget(self.bio)
 
-        sp = QPushButton("Save Profile")
-        sp.setCursor(Qt.CursorShape.PointingHandCursor)
-        sp.setStyleSheet(main_btn_style)
+        sp = _btn(QPushButton("Save Profile"), "primary")
         sp.clicked.connect(self.save_profile)
         layout.addWidget(sp)
 
-        # --- 4. LINKS სექცია ---
-        lbl_links = QLabel("Manage Links")
-        lbl_links.setStyleSheet(
-            "font-size: 13px; font-weight: bold; color: #111827; margin-top: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px;")
+        lbl_links = _lbl(QLabel("Manage Links"), "sectionTitle")
         layout.addWidget(lbl_links)
 
-        # ლინკების სია
         self.list = QListWidget()
-        self.list.setFixedHeight(100)
-        self.list.setStyleSheet("""
-            QListWidget {
-                border: 1px solid #d1d5db; border-radius: 10px; padding: 2px;
-                background-color: #f9fafb; color: black;
-            }
-            QListWidget::item { padding: 4px; border-bottom: 1px solid #f3f4f6; font-size: 11px; }
-            QListWidget::item:selected { background-color: #e6f2f2; color: #008080; border-radius: 5px; }
-        """)
+        self.list.setMinimumHeight(80)
+        self.list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.list.currentItemChanged.connect(self.pick_link)
         layout.addWidget(self.list)
 
         self.link_title = QLineEdit()
         self.link_title.setPlaceholderText("Link Title (e.g., GitHub)")
-        self.link_title.setStyleSheet(input_style)
         layout.addWidget(self.link_title)
 
         self.link_url = QLineEdit()
         self.link_url.setPlaceholderText("URL (https://...)")
-        self.link_url.setStyleSheet(input_style)
         layout.addWidget(self.link_url)
 
         self.link_icon = QComboBox()
         self.link_icon.addItems(["Default", "Facebook", "Instagram", "Twitter", "GitHub", "YouTube", "LinkedIn"])
-        self.link_icon.setStyleSheet("""
-            QComboBox {
-                border: 1px solid #d1d5db; border-radius: 10px; padding: 4px 10px;
-                font-size: 12px; background-color: white; color: black;
-            }
-        """)
         layout.addWidget(self.link_icon)
+
+        self.link_type = QComboBox()
+        self.link_type.addItems(["URL", "Contact"])
+        self.link_type.currentTextChanged.connect(self._on_link_type_changed)
+        layout.addWidget(self.link_type)
+
+        self.link_slug = QLineEdit()
+        self.link_slug.setPlaceholderText("Custom slug (e.g. github) → /u/you/github")
+        layout.addWidget(self.link_slug)
+
+        self.link_group = QLineEdit()
+        self.link_group.setPlaceholderText("Group / Section (e.g. Social, Work)")
+        layout.addWidget(self.link_group)
+
+        sched_row = QHBoxLayout()
+        self.link_start = QLineEdit()
+        self.link_start.setPlaceholderText("Start YYYY-MM-DD")
+        self.link_end = QLineEdit()
+        self.link_end.setPlaceholderText("End YYYY-MM-DD")
+        sched_row.addWidget(self.link_start)
+        sched_row.addWidget(self.link_end)
+        layout.addLayout(sched_row)
 
         # მართვის ღილაკები (რიგი 1)
         row = QHBoxLayout()
         row.setSpacing(5)
-        self.btn_add = QPushButton("Add")
-        self.btn_add.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_add.setStyleSheet(secondary_btn_style)
+        self.btn_add = _btn(QPushButton("Add"), "secondary")
         self.btn_add.clicked.connect(self.add_link)
 
-        self.btn_upd = QPushButton("Update")
-        self.btn_upd.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_upd = _btn(QPushButton("Update"), "secondary")
         self.btn_upd.setEnabled(False)
-        self.btn_upd.setStyleSheet(secondary_btn_style)
         self.btn_upd.clicked.connect(self.upd_link)
 
-        self.btn_hide = QPushButton("Hide/Show")
-        self.btn_hide.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_hide = _btn(QPushButton("Hide/Show"), "secondary")
         self.btn_hide.setEnabled(False)
-        self.btn_hide.setStyleSheet(secondary_btn_style)
         self.btn_hide.clicked.connect(self.tog_link)
 
-        self.btn_del = QPushButton("Delete")
-        self.btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_del = _btn(QPushButton("Delete"), "danger")
         self.btn_del.setEnabled(False)
-        self.btn_del.setStyleSheet("""
-            QPushButton {
-                background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;
-                border-radius: 10px; padding: 6px; font-size: 11px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #fca5a5; }
-            QPushButton:disabled { background-color: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; }
-        """)
         self.btn_del.clicked.connect(self.del_link)
+
+        self.btn_pin = _btn(QPushButton("Pin"), "secondary")
+        self.btn_pin.setEnabled(False)
+        self.btn_pin.clicked.connect(self.pin_link)
 
         row.addWidget(self.btn_add)
         row.addWidget(self.btn_upd)
         row.addWidget(self.btn_hide)
+        row.addWidget(self.btn_pin)
         row.addWidget(self.btn_del)
         layout.addLayout(row)
 
         # გადაადგილების ღილაკები (რიგი 2)
         row2 = QHBoxLayout()
         row2.setSpacing(5)
-        up = QPushButton("Move Up ↑")
-        up.setCursor(Qt.CursorShape.PointingHandCursor)
-        up.setStyleSheet(secondary_btn_style)
+        up = _btn(QPushButton("Move Up ↑"), "secondary")
         up.clicked.connect(lambda: self.move("up"))
 
-        dn = QPushButton("Move Down ↓")
-        dn.setCursor(Qt.CursorShape.PointingHandCursor)
-        dn.setStyleSheet(secondary_btn_style)
+        dn = _btn(QPushButton("Move Down ↓"), "secondary")
         dn.clicked.connect(lambda: self.move("down"))
 
         row2.addWidget(up)
         row2.addWidget(dn)
         layout.addLayout(row2)
 
-        self.msg = QLabel("")
-        self.msg.setStyleSheet("color: #008080; font-size: 11px; font-weight: bold;")
+        self.msg = _lbl(QLabel(""), "success")
         self.msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.msg)
 
-        main_layout.addWidget(content_widget)
-
-        # 🌟 ეს ხაზი უზრუნველყოფს, რომ ქვემოთ დარჩეს თავისუფალი ადგილი და სქროლი არ გაჩნდეს
-        main_layout.addStretch()
+        scroll.setWidget(content_widget)
+        main_layout.addWidget(scroll, 1)
 
         self.refresh()
+
+    def _on_link_type_changed(self, text):
+        self.link_url.setEnabled(text == "URL")
+        if text == "Contact":
+            self.link_url.setPlaceholderText("(not needed for contact links)")
+        else:
+            self.link_url.setPlaceholderText("URL (https://...)")
+
+    def _link_kwargs(self):
+        lt = "contact" if self.link_type.currentText() == "Contact" else "url"
+        return {
+            "start_date": self.link_start.text().strip(),
+            "end_date": self.link_end.text().strip(),
+            "link_type": lt,
+            "slug": self.link_slug.text().strip(),
+            "group_name": self.link_group.text().strip(),
+        }
+
+    def _clear_link_form(self):
+        self.link_title.clear()
+        self.link_url.clear()
+        self.link_icon.setCurrentIndex(0)
+        self.link_type.setCurrentIndex(0)
+        self.link_slug.clear()
+        self.link_group.clear()
+        self.link_start.clear()
+        self.link_end.clear()
 
     def refresh(self):
         u = self.logic.current_user
@@ -577,35 +472,50 @@ class DashboardPage(QWidget):
         try:
             for link in self.logic.get_my_links():
                 txt = link.title
+                if link.is_pinned:
+                    txt = "📌 " + txt
                 if not link.is_active:
                     txt += " (off)"
-
-                # ვამატებთ კლიკების რაოდენობას ვიზუალში
-                txt += f"  [ 👁 {link.clicks} clicks ]"
-
-                item = QListWidgetItem(txt + " - " + link.url)
+                if link.link_type == "contact":
+                    txt += " [contact]"
+                if link.group_name:
+                    txt += f" [{link.group_name}]"
+                if link.slug:
+                    txt += f" /{link.slug}"
+                if link.start_date or link.end_date:
+                    txt += f" ({link.start_date or '...'} → {link.end_date or '...'})"
+                txt += f"  [ 👁 {link.clicks} ]"
+                detail = link.url if link.link_type == "url" else "contact form"
+                item = QListWidgetItem(txt + " - " + detail)
                 item.setData(Qt.ItemDataRole.UserRole, link.id)
                 self.list.addItem(item)
         except Exception as e:
             print(e)
-            pass
 
     def pick_link(self, item, prev):
-        if item == None:
+        if item is None:
             self.selected_id = None
             self.btn_upd.setEnabled(False)
             self.btn_hide.setEnabled(False)
             self.btn_del.setEnabled(False)
+            self.btn_pin.setEnabled(False)
             return
         self.selected_id = item.data(Qt.ItemDataRole.UserRole)
         self.btn_upd.setEnabled(True)
         self.btn_hide.setEnabled(True)
         self.btn_del.setEnabled(True)
+        self.btn_pin.setEnabled(True)
         for link in self.logic.get_my_links():
             if link.id == self.selected_id:
+                self.btn_pin.setText("Unpin" if link.is_pinned else "Pin")
                 self.link_title.setText(link.title)
                 self.link_url.setText(link.url)
                 self.link_icon.setCurrentText(link.icon if link.icon else "Default")
+                self.link_type.setCurrentText("Contact" if link.link_type == "contact" else "URL")
+                self.link_slug.setText(link.slug or "")
+                self.link_group.setText(link.group_name or "")
+                self.link_start.setText(link.start_date or "")
+                self.link_end.setText(link.end_date or "")
 
     def copy_url(self):
         QApplication.clipboard().setText(self.share_box.text())
@@ -620,25 +530,50 @@ class DashboardPage(QWidget):
 
     def add_link(self):
         try:
-            self.logic.add_link(self.link_title.text(), self.link_url.text(), self.link_icon.currentText())
-            self.link_title.clear()
-            self.link_url.clear()
-            self.link_icon.setCurrentIndex(0)
+            self.logic.add_link(
+                self.link_title.text(), self.link_url.text(), self.link_icon.currentText(),
+                **self._link_kwargs(),
+            )
+            self._clear_link_form()
             self.reload_list()
             self.msg.setText("added")
-        except:
-            self.msg.setText("fail")
+        except Exception as e:
+            self.msg.setText(self._link_err(e))
+
+    def _link_err(self, e):
+        err = str(e)
+        if "url not 200" in err:
+            return "URL did not return HTTP 200"
+        if "url unreachable" in err:
+            return "URL is unreachable"
+        if "slug" in err or "url" in err:
+            return err
+        return "fail"
 
     def upd_link(self):
-        if self.selected_id == None:
+        if self.selected_id is None:
             return
         try:
             self.logic.update_link(
-                self.selected_id, self.link_title.text(), self.link_url.text(), self.link_icon.currentText()
+                self.selected_id, self.link_title.text(), self.link_url.text(),
+                self.link_icon.currentText(), **self._link_kwargs(),
             )
             self.reload_list()
             self.msg.setText("updated")
-        except:
+        except Exception as e:
+            self.msg.setText(self._link_err(e))
+
+    def pin_link(self):
+        if self.selected_id is None:
+            return
+        try:
+            self.logic.toggle_pin(self.selected_id)
+            self.reload_list()
+            for link in self.logic.get_my_links():
+                if link.id == self.selected_id:
+                    self.btn_pin.setText("Unpin" if link.is_pinned else "Pin")
+            self.msg.setText("pin updated")
+        except Exception:
             self.msg.setText("fail")
 
     def tog_link(self):
@@ -655,8 +590,7 @@ class DashboardPage(QWidget):
         try:
             self.logic.delete_link(self.selected_id)
             self.selected_id = None
-            self.link_title.clear()
-            self.link_url.clear()
+            self._clear_link_form()
             self.reload_list()
         except:
             self.msg.setText("fail")
@@ -680,73 +614,243 @@ class DashboardPage(QWidget):
         self.logic.logout()
         self.logged_out.emit()
 
-    def toggle_theme(self):
-        if not hasattr(self, "is_dark") or not self.is_dark:
-            self.is_dark = True
-            self.btn_theme.setText("Light Mode")
-            self.window().setStyleSheet("""
-                QWidget { background-color: #2b2b2b; color: #ffffff; }
-                QLineEdit, QTextEdit, QListWidget, QComboBox { 
-                    background-color: #3b3b3b; color: #ffffff; border: 1px solid #555; 
-                }
-                QPushButton { 
-                    background-color: #4b4b4b; color: white; border: 1px solid #555; padding: 5px; 
-                }
-                QPushButton:hover { background-color: #5b5b5b; }
-            """)
+
+class AnalyticsPage(QWidget):
+    go_back = pyqtSignal()
+
+    def __init__(self, logic):
+        super().__init__()
+        self.logic = logic
+        self.analytics_days = 30
+        self._last_stats = []
+        self._last_over_time = []
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        content = QWidget()
+        content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        layout = QVBoxLayout(content)
+        layout.setSpacing(10)
+
+        top = QHBoxLayout()
+        back_btn = _btn(QPushButton("← Dashboard"), "link")
+        back_btn.clicked.connect(self.go_back.emit)
+        title = _lbl(QLabel("Analytics"), "sectionTitle")
+        top.addWidget(back_btn)
+        top.addStretch()
+        top.addWidget(title)
+        top.addStretch()
+        layout.addLayout(top)
+
+        self.views_lbl = _lbl(QLabel(), "stat")
+        layout.addWidget(self.views_lbl)
+
+        self.popular_lbl = _lbl(QLabel(), "substat")
+        layout.addWidget(self.popular_lbl)
+
+        filter_row = QHBoxLayout()
+        filter_row.addWidget(_lbl(QLabel("Date range:"), "muted"))
+        self.days_combo = QComboBox()
+        self.days_combo.addItems(["Last 7 days", "Last 30 days", "Last 90 days"])
+        self.days_combo.setCurrentIndex(1)
+        self.days_combo.currentIndexChanged.connect(self._on_days_changed)
+        filter_row.addWidget(self.days_combo)
+        filter_row.addStretch()
+        self.btn_export = _btn(QPushButton("Export PNG"), "primary")
+        self.btn_export.clicked.connect(self.export_png)
+        filter_row.addWidget(self.btn_export)
+        layout.addLayout(filter_row)
+
+        lbl1 = _lbl(QLabel("Clicks per link"), "sectionTitle")
+        layout.addWidget(lbl1)
+
+        self.link_chart_fig = Figure(figsize=(5, 3), dpi=100)
+        self.link_chart_fig.subplots_adjust(left=0.28, right=0.95, top=0.92, bottom=0.12)
+        self.link_chart_canvas = FigureCanvas(self.link_chart_fig)
+        self.link_chart_canvas.setMinimumHeight(180)
+        self.link_chart_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(self.link_chart_canvas)
+
+        self.time_lbl = _lbl(QLabel("Clicks over time (last 30 days)"), "sectionTitle")
+        layout.addWidget(self.time_lbl)
+
+        self.time_table = QTableWidget(0, 2)
+        self.time_table.setHorizontalHeaderLabels(["Date", "Clicks"])
+        self.time_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.time_table.setMinimumHeight(100)
+        self.time_table.verticalHeader().setVisible(False)
+        self.time_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        layout.addWidget(self.time_table)
+
+        lbl3 = _lbl(QLabel("Contact inbox"), "sectionTitle")
+        layout.addWidget(lbl3)
+
+        self.inbox = QListWidget()
+        self.inbox.setMinimumHeight(80)
+        layout.addWidget(self.inbox)
+
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll, 1)
+
+    def _on_days_changed(self, index):
+        self.analytics_days = [7, 30, 90][index]
+        self.refresh()
+
+    def refresh(self):
+        try:
+            data = self.logic.get_analytics(days=self.analytics_days)
+        except Exception:
+            return
+
+        days = data["days"]
+        self.time_lbl.setText(f"Clicks over time (last {days} days)")
+
+        self.views_lbl.setText(f"Total profile views: {data['profile_views']}")
+
+        if data["most_popular"]:
+            _, title, clicks = data["most_popular"]
+            self.popular_lbl.setText(f"Most popular link ({days}d): {title} ({clicks} clicks)")
         else:
-            self.is_dark = False
-            self.btn_theme.setText("Dark Mode")
-            self.window().setStyleSheet("""
-                QMainWindow { 
-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
-                    stop:0 rgba(184, 255, 253, 255), 
-                    stop:1 rgba(255, 186, 211, 255)); 
-                }
-            """)
+            self.popular_lbl.setText(f"Most popular link ({days}d): —")
+
+        stats = data["link_stats"]
+        self._last_stats = stats
+        self._update_link_chart(stats)
+
+        over_time = data["clicks_over_time"]
+        self._last_over_time = over_time
+        self.time_table.setRowCount(len(over_time))
+        for i, (day, cnt) in enumerate(over_time):
+            self.time_table.setItem(i, 0, QTableWidgetItem(day or ""))
+            self.time_table.setItem(i, 1, QTableWidgetItem(str(cnt)))
+
+        self.inbox.clear()
+        for msg in self.logic.get_contact_inbox():
+            txt = f"{msg['created_at'][:10]} | {msg['link_title']}: {msg['sender_name']} — {msg['message'][:60]}"
+            self.inbox.addItem(txt)
+
+    def _update_link_chart(self, stats):
+        dark = getattr(self.window(), "is_dark", False)
+        bg = "#1e293b" if dark else "#ffffff"
+        fg = "#f1f5f9" if dark else "#0f172a"
+        grid = "#475569" if dark else "#e5e7eb"
+        bar_color = "#2dd4bf" if dark else "#0d9488"
+
+        self.link_chart_fig.clear()
+        n = max(len(stats), 1)
+        height = max(2.0, min(6.0, 0.45 * n + 1.2))
+        self.link_chart_fig.set_size_inches(5, height)
+
+        ax = self.link_chart_fig.add_subplot(111)
+        ax.set_facecolor(bg)
+        self.link_chart_fig.patch.set_facecolor(bg)
+
+        if not stats:
+            ax.text(
+                0.5, 0.5, "No link data yet",
+                ha="center", va="center", transform=ax.transAxes,
+                color=fg, fontsize=12,
+            )
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+        else:
+            ordered = sorted(stats, key=lambda x: x[2])
+            titles = [t[:22] + ("…" if len(t) > 22 else "") for _, t, _ in ordered]
+            clicks = [c for _, _, c in ordered]
+
+            bars = ax.barh(titles, clicks, color=bar_color, height=0.6)
+            ax.set_xlabel("Clicks", color=fg, fontsize=10)
+            ax.tick_params(colors=fg, labelsize=9)
+            ax.grid(axis="x", color=grid, linestyle="--", linewidth=0.6, alpha=0.7)
+            ax.set_axisbelow(True)
+            for spine in ax.spines.values():
+                spine.set_color(grid)
+
+            for bar, count in zip(bars, clicks):
+                offset = max(max(clicks), 1) * 0.02
+                ax.text(
+                    bar.get_width() + offset,
+                    bar.get_y() + bar.get_height() / 2,
+                    str(count),
+                    va="center", ha="left", color=fg, fontsize=9,
+                )
+
+        self.link_chart_canvas.draw()
+
+    def export_png(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export analytics", "analytics.png", "PNG images (*.png)"
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".png"):
+            path += ".png"
+        try:
+            user = self.logic.current_user
+            name = user.username if user else "user"
+            self.link_chart_fig.savefig(
+                path, dpi=150, bbox_inches="tight",
+                facecolor=self.link_chart_fig.patch.get_facecolor(),
+            )
+            QMessageBox.information(
+                self, "Exported",
+                f"Analytics chart saved to:\n{path}\n({name}, last {self.analytics_days} days)",
+            )
+        except Exception as e:
+            QMessageBox.warning(self, "Export failed", str(e))
 
 
 class MainWindow(QMainWindow):
     def __init__(self, logic):
         super().__init__()
         self.logic = logic
+        self.is_dark = False
         self.setWindowTitle("LinkVerse")
-        self.setMinimumSize(550, 1000)
-        self.setStyleSheet("QMainWindow { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(184, 255, 253, 255), stop:1 rgba(255, 186, 211, 255));}")
-        # ვქმნით მთავარ კონტეინერს
+        self.setMinimumSize(380, 500)
+        self.resize(480, 720)
+
         main_container = QWidget()
+        main_container.setObjectName("root")
         self.setCentralWidget(main_container)
         main_layout = QVBoxLayout(main_container)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # ვქმნით ზედა ზოლს (Header) ლოგოსთვის
         header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setContentsMargins(12, 4, 12, 0)
 
         self.logo_label = QLabel()
         logo_path = os.path.join(os.path.dirname(__file__), "static", "logo.png")
 
-        # ვამოწმებთ, არსებობს თუ არა ლოგოს ფაილი
         if os.path.exists(logo_path):
             pix = QPixmap(logo_path).scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio,
                                             Qt.TransformationMode.SmoothTransformation)
             self.logo_label.setPixmap(pix)
         else:
-            # თუ სურათი ვერ იპოვა, ლამაზ ტექსტს დაწერს მის ნაცვლად
             self.logo_label.setText("LinkVerse")
-            self.logo_label.setStyleSheet("font-size: 18px;")
+            _lbl(self.logo_label, "pageTitle")
+
+        self.btn_theme = _btn(QPushButton("🌙 Dark"), "chip")
+        self.btn_theme.clicked.connect(self.toggle_theme)
 
         header_layout.addWidget(self.logo_label)
-
-        # ეს 'stretch' ლოგოს მარცხნივ აჩერებს. თუ გინდა რომ ლოგო მარჯვნივ იყოს,
-        # ეს ხაზი `header_layout.addWidget(self.logo_label)`-ის ზემოთ აიტანე.
         header_layout.addStretch()
+        header_layout.addWidget(self.btn_theme)
 
         main_layout.addLayout(header_layout)
 
         # ვაბრუნებთ StackedWidget-ს (გვერდების გადასართველად) ლოგოს ქვემოთ
         self.stack = QStackedWidget()
-        main_layout.addWidget(self.stack)
+        self.stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        main_layout.addWidget(self.stack, 1)
 
         self.login_page = LoginPage(logic)
         self.login_page.done.connect(self.show_dash)
@@ -760,11 +864,39 @@ class MainWindow(QMainWindow):
 
         self.dash = DashboardPage(logic)
         self.dash.logged_out.connect(self.on_logout)
+        self.dash.go_analytics.connect(self.show_analytics)
         self.stack.addWidget(self.dash)
+
+        self.analytics = AnalyticsPage(logic)
+        self.analytics.go_back.connect(lambda: self.stack.setCurrentIndex(2))
+        self.stack.addWidget(self.analytics)
+
+        self._apply_theme()
+
+    def _apply_theme(self):
+        apply_theme(QApplication.instance(), self.is_dark)
+        if self.is_dark:
+            self.btn_theme.setText("☀️ Light")
+            self.btn_theme.setProperty("btnRole", "chipActive")
+        else:
+            self.btn_theme.setText("🌙 Dark")
+            self.btn_theme.setProperty("btnRole", "chip")
+        self.btn_theme.style().unpolish(self.btn_theme)
+        self.btn_theme.style().polish(self.btn_theme)
+        if self.stack.currentIndex() == 3:
+            self.analytics.refresh()
+
+    def toggle_theme(self):
+        self.is_dark = not self.is_dark
+        self._apply_theme()
 
     def show_dash(self):
         self.dash.refresh()
         self.stack.setCurrentIndex(2)
+
+    def show_analytics(self):
+        self.analytics.refresh()
+        self.stack.setCurrentIndex(3)
 
     def on_logout(self):
         self.login_page.clear()

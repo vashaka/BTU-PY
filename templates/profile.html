@@ -1,34 +1,142 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ user.display_name }}</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <style>
-body { font-family: Arial; text-align: center; background: #b8fffd;
-background: linear-gradient(120deg, rgba(184, 255, 253, 1) 0%, rgba(255, 186, 211, 1) 100%); padding: 30px; }
-h1 { margin: 10px; color: black;}
-p { color: black; }
-a { display: flex; align-items: center; justify-content: center; margin: 8px auto; padding: 12px; width: 250px;
-    background: white; border: 1px solid #ccc; text-decoration: none; color: black; border-radius: 8px; transition: 0.2s; }
-a:hover { background: #ddd; transform: translateY(-2px); }
-a i { margin-right: 10px; font-size: 1.2em; width: 24px; text-align: center; }
+* { box-sizing: border-box; }
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(120deg, rgba(184, 255, 253, 1) 0%, rgba(255, 186, 211, 1) 100%);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.logo-wrap {
+    width: 100%;
+    max-width: 520px;
+    text-align: left;
+    margin-bottom: 8px;
+}
+.logo-wrap img {
+    height: 64px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+}
+.card {
+    background: white;
+    width: 100%;
+    max-width: 520px;
+    padding: 24px 20px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    text-align: center;
+}
+.avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 16px;
+    display: block;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.avatar-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: #ccc;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    color: white;
+}
+h1 { margin: 8px 0; color: #111; font-size: clamp(1.25rem, 4vw, 1.75rem); }
+.handle { color: #555; margin: 0 0 8px; }
+.bio { color: #333; margin: 0 0 16px; padding: 0 8px; word-break: break-word; }
+.links { width: 100%; }
+.group-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin: 20px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 0 4px;
+}
+.link-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 8px 0;
+    padding: 14px 16px;
+    background: white;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    color: black;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+.link-btn:hover { background: #f3f4f6; transform: translateY(-1px); }
+.link-btn i { font-size: 1.2em; width: 24px; text-align: center; flex-shrink: 0; }
+.link-title { flex: 1; text-align: left; word-break: break-word; }
+.link-meta {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #555;
+    flex-shrink: 0;
+}
+.slug-hint { font-size: 11px; color: #888; margin: -4px 0 8px; text-align: left; padding-left: 4px; }
+.empty { color: #666; }
+
+@media (max-width: 480px) {
+    body { padding: 12px; }
+    .card { padding: 20px 14px 28px; border-radius: 14px; }
+    .logo-wrap img { height: 48px; }
+    .link-btn { padding: 12px 14px; }
+}
 </style>
 </head>
 <body>
-<div style="display: flex; position:absolute; top: -10px; left: 10px; cursor: pointer;">
-        <img src="/static/logo.png" style="height: 400px; width: 400px; object-fit: contain; margin-bottom: 5px;">
-    </div>
-<div style="background-color: white; width: 40%; height: 90%; justify-self: center; box-shadow: 5px 10px 5px gray; border-radius: 16px; ">
-{% if user.profile_pic %}
-    <img src="/static/uploads/{{ user.profile_pic }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 30px auto; display: block; border: 3px solid white; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
-{% else %}
-    <div style="width: 100px; height: 100px; border-radius: 50%; background: #ccc; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 50px; color: white;">👤</div>
-{% endif %}
-<h1>{{ user.display_name }}</h1>
-<p>@{{ user.username }}</p>
-{% if user.bio %}<p>{{ user.bio }}</p>{% endif %}
+<div class="logo-wrap">
+    <img src="/static/logo.png" alt="Logo">
+</div>
 
-{% for link in links %}
-<a href="/click/{{ link.id }}" target="_blank" onclick="updateCount(this)">
+<div class="card">
+{% if user.profile_pic %}
+    <img class="avatar" src="/static/uploads/{{ user.profile_pic }}" alt="{{ user.display_name }}">
+{% else %}
+    <div class="avatar-placeholder">👤</div>
+{% endif %}
+
+<h1>{{ user.display_name }}</h1>
+<p class="handle">@{{ user.username }}</p>
+{% if user.bio %}<p class="bio">{{ user.bio }}</p>{% endif %}
+
+<div class="links">
+{% for group in link_groups %}
+{% if group.name %}
+    <div class="group-title">{{ group.name }}</div>
+{% endif %}
+{% for link in group.links %}
+{% if link.link_type == 'contact' %}
+<a class="link-btn" href="{% if link.slug %}/u/{{ user.username }}/{{ link.slug }}{% else %}/click/{{ link.id }}{% endif %}">
+{% else %}
+<a class="link-btn" href="{% if link.slug %}/u/{{ user.username }}/{{ link.slug }}{% else %}/click/{{ link.id }}{% endif %}" target="_blank" rel="noopener" onclick="updateCount(this)">
+{% endif %}
     {% if link.icon == 'Facebook' %}
         <i class="fab fa-facebook" style="color: #1877F2;"></i>
     {% elif link.icon == 'Instagram' %}
@@ -41,20 +149,27 @@ a i { margin-right: 10px; font-size: 1.2em; width: 24px; text-align: center; }
         <i class="fab fa-youtube" style="color: #FF0000;"></i>
     {% elif link.icon == 'LinkedIn' %}
         <i class="fab fa-linkedin" style="color: #0077B5;"></i>
+    {% elif link.link_type == 'contact' %}
+        <i class="fas fa-envelope" style="color: #008080;"></i>
     {% else %}
         <i class="fas fa-link" style="color: #666;"></i>
     {% endif %}
 
-    <span style="flex: 1; text-align: left;">{{ link.title }}</span>
+    <span class="link-title">{{ link.title }}</span>
 
-    <span style="background: #f4f4f4; border: 1px solid #ddd; padding: 3px 8px; border-radius: 12px; font-size: 12px; color: #555;">
-        👁 <span class="clicks-val">{{ link.clicks }}</span>
+    <span class="link-meta">
+        {% if link.link_type == 'contact' %}✉{% else %}👁 <span class="clicks-val">{{ link.clicks }}</span>{% endif %}
     </span>
 </a>
+{% if link.slug and link.link_type != 'contact' %}
+<div class="slug-hint">/{{ link.slug }}</div>
+{% endif %}
+{% endfor %}
 {% endfor %}
 
-{% if not links %}<p>no links</p>{% endif %}
-    </div>
+{% if not link_groups %}<p class="empty">no links</p>{% endif %}
+</div>
+</div>
 
 <script>
 function updateCount(element) {
