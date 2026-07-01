@@ -15,6 +15,7 @@ def must_be_logged_in(func):
         if self.logged_in_user is None:
             raise Exception("not logged in")
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -165,24 +166,59 @@ class AppLogic:
         return self.db.get_links(self.logged_in_user.id)
 
     @must_be_logged_in
-    def add_link(self, title, url, icon="", start_date="", end_date="",
-                 link_type="url", slug="", group_name=""):
+    def add_link(
+        self,
+        title,
+        url,
+        icon="",
+        start_date="",
+        end_date="",
+        link_type="url",
+        slug="",
+        group_name="",
+    ):
         title, url, slug = self._validate_link_fields(title, url, link_type, slug)
         return self.db.add_link(
-            self.logged_in_user.id, title, url, icon,
-            start_date.strip(), end_date.strip(), link_type, slug, group_name.strip(),
+            self.logged_in_user.id,
+            title,
+            url,
+            icon,
+            start_date.strip(),
+            end_date.strip(),
+            link_type,
+            slug,
+            group_name.strip(),
         )
 
     @must_be_logged_in
-    def update_link(self, link_id, title, url, icon="", start_date="", end_date="",
-                    link_type="url", slug="", group_name=""):
+    def update_link(
+        self,
+        link_id,
+        title,
+        url,
+        icon="",
+        start_date="",
+        end_date="",
+        link_type="url",
+        slug="",
+        group_name="",
+    ):
         link = self.db.get_link(link_id)
         if not link or link.user_id != self.logged_in_user.id:
             raise Exception("error")
-        title, url, slug = self._validate_link_fields(title, url, link_type, slug, link_id)
+        title, url, slug = self._validate_link_fields(
+            title, url, link_type, slug, link_id
+        )
         return self.db.update_link(
-            link_id, title, url, icon,
-            start_date.strip(), end_date.strip(), link_type, slug, group_name.strip(),
+            link_id,
+            title,
+            url,
+            icon,
+            start_date.strip(),
+            end_date.strip(),
+            link_type,
+            slug,
+            group_name.strip(),
         )
 
     @must_be_logged_in
@@ -244,6 +280,7 @@ class AppLogic:
             return u, None
         from database import _link_is_scheduled_visible
         from datetime import datetime
+
         today = datetime.now().strftime("%Y-%m-%d")
         if not _link_is_scheduled_visible(link, today):
             return u, None

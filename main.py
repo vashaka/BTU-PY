@@ -1,4 +1,4 @@
-# main file - run this
+# main runningg thiss
 import sys
 from PyQt6.QtWidgets import QApplication
 from logic import AppLogic
@@ -14,6 +14,7 @@ def main():
     # გამოიყენება პირდაპირ კონტროლერებზე
     qt = QApplication(sys.argv)
     win = MainWindow(app_logic)
+    # გამოჩნდება ფანჯარა
     win.show()
     sys.exit(qt.exec())
 

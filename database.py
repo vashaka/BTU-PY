@@ -44,29 +44,36 @@ def _migrate(conn):
     if "profile_views" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN profile_views INTEGER DEFAULT 0")
 
-    conn.execute("""CREATE TABLE IF NOT EXISTS click_events (
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS click_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         link_id INTEGER,
         clicked_at TEXT
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS profile_view_events (
+    )"""
+    )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS profile_view_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         viewed_at TEXT
-    )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS contact_messages (
+    )"""
+    )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS contact_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         link_id INTEGER,
         sender_name TEXT,
         sender_email TEXT,
         message TEXT,
         created_at TEXT
-    )""")
+    )"""
+    )
 
 
 def setup_tables():
     conn = get_db()
-    conn.execute("""CREATE TABLE IF NOT EXISTS users (
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             email TEXT UNIQUE,
@@ -75,8 +82,10 @@ def setup_tables():
             bio TEXT DEFAULT '',
             profile_pic TEXT DEFAULT '',
             profile_views INTEGER DEFAULT 0
-        )""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS links (
+        )"""
+    )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS links (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 title TEXT,
@@ -91,7 +100,8 @@ def setup_tables():
                 slug TEXT DEFAULT '',
                 group_name TEXT DEFAULT '',
                 is_pinned INTEGER DEFAULT 0
-            )""")
+            )"""
+    )
     _migrate(conn)
     conn.commit()
     conn.close()
@@ -106,7 +116,9 @@ class User:
         self.display_name = row["display_name"]
         self.bio = row["bio"] or ""
         self.profile_pic = row["profile_pic"] if "profile_pic" in row.keys() else ""
-        self.profile_views = row["profile_views"] if "profile_views" in row.keys() else 0
+        self.profile_views = (
+            row["profile_views"] if "profile_views" in row.keys() else 0
+        )
 
     @property
     def profile_url(self):
@@ -145,7 +157,9 @@ class Database:
 
     def get_user_by_name(self, username):
         conn = get_db()
-        row = conn.execute("SELECT * FROM users WHERE username=?", (username.lower(),)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM users WHERE username=?", (username.lower(),)
+        ).fetchone()
         conn.close()
         if row:
             return User(row)
@@ -153,7 +167,9 @@ class Database:
 
     def get_user_by_email(self, email):
         conn = get_db()
-        row = conn.execute("SELECT * FROM users WHERE email=?", (email.lower(),)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM users WHERE email=?", (email.lower(),)
+        ).fetchone()
         conn.close()
         if row:
             return User(row)
@@ -173,7 +189,10 @@ class Database:
 
     def update_user_profile(self, user_id, display_name, bio):
         conn = get_db()
-        conn.execute("UPDATE users SET display_name=?, bio=? WHERE id=?", (display_name, bio, user_id))
+        conn.execute(
+            "UPDATE users SET display_name=?, bio=? WHERE id=?",
+            (display_name, bio, user_id),
+        )
         row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
         conn.commit()
         conn.close()
@@ -198,8 +217,18 @@ class Database:
             links = [l for l in links if _link_is_scheduled_visible(l, today)]
         return links
 
-    def add_link(self, user_id, title, url, icon, start_date="", end_date="",
-                 link_type="url", slug="", group_name=""):
+    def add_link(
+        self,
+        user_id,
+        title,
+        url,
+        icon,
+        start_date="",
+        end_date="",
+        link_type="url",
+        slug="",
+        group_name="",
+    ):
         conn = get_db()
         mx = conn.execute(
             "SELECT MAX(sort_order) FROM links WHERE user_id=?", (user_id,)
@@ -210,7 +239,18 @@ class Database:
             """INSERT INTO links
                (user_id,title,url,icon,sort_order,start_date,end_date,link_type,slug,group_name)
                VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (user_id, title, url, icon, mx + 1, start_date, end_date, link_type, slug, group_name),
+            (
+                user_id,
+                title,
+                url,
+                icon,
+                mx + 1,
+                start_date,
+                end_date,
+                link_type,
+                slug,
+                group_name,
+            ),
         )
         lid = cur.lastrowid
         row = conn.execute("SELECT * FROM links WHERE id=?", (lid,)).fetchone()
@@ -254,13 +294,33 @@ class Database:
         conn.close()
         return row is not None
 
-    def update_link(self, link_id, title, url, icon, start_date="", end_date="",
-                    link_type="url", slug="", group_name=""):
+    def update_link(
+        self,
+        link_id,
+        title,
+        url,
+        icon,
+        start_date="",
+        end_date="",
+        link_type="url",
+        slug="",
+        group_name="",
+    ):
         conn = get_db()
         conn.execute(
             """UPDATE links SET title=?, url=?, icon=?, start_date=?, end_date=?,
                link_type=?, slug=?, group_name=? WHERE id=?""",
-            (title, url, icon, start_date, end_date, link_type, slug, group_name, link_id),
+            (
+                title,
+                url,
+                icon,
+                start_date,
+                end_date,
+                link_type,
+                slug,
+                group_name,
+                link_id,
+            ),
         )
         row = conn.execute("SELECT * FROM links WHERE id=?", (link_id,)).fetchone()
         conn.commit()
@@ -277,7 +337,9 @@ class Database:
 
     def toggle_link(self, link_id):
         conn = get_db()
-        row = conn.execute("SELECT is_active FROM links WHERE id=?", (link_id,)).fetchone()
+        row = conn.execute(
+            "SELECT is_active FROM links WHERE id=?", (link_id,)
+        ).fetchone()
         new_val = 0 if row["is_active"] else 1
         conn.execute("UPDATE links SET is_active=? WHERE id=?", (new_val, link_id))
         conn.commit()
@@ -287,7 +349,10 @@ class Database:
         conn = get_db()
         if pinned:
             conn.execute("UPDATE links SET is_pinned=0 WHERE user_id=?", (user_id,))
-        conn.execute("UPDATE links SET is_pinned=? WHERE id=? AND user_id=?", (1 if pinned else 0, link_id, user_id))
+        conn.execute(
+            "UPDATE links SET is_pinned=? WHERE id=? AND user_id=?",
+            (1 if pinned else 0, link_id, user_id),
+        )
         conn.commit()
         conn.close()
 
@@ -295,7 +360,8 @@ class Database:
         conn = get_db()
         for i, lid in enumerate(id_list):
             conn.execute(
-                "UPDATE links SET sort_order=? WHERE id=? AND user_id=?", (i, lid, user_id)
+                "UPDATE links SET sort_order=? WHERE id=? AND user_id=?",
+                (i, lid, user_id),
             )
         conn.commit()
         conn.close()
@@ -304,23 +370,31 @@ class Database:
         now = datetime.now().isoformat(timespec="seconds")
         conn = get_db()
         conn.execute("UPDATE links SET clicks = clicks + 1 WHERE id=?", (link_id,))
-        conn.execute("INSERT INTO click_events (link_id, clicked_at) VALUES (?, ?)", (link_id, now))
+        conn.execute(
+            "INSERT INTO click_events (link_id, clicked_at) VALUES (?, ?)",
+            (link_id, now),
+        )
         conn.commit()
         conn.close()
 
     def record_profile_view(self, user_id):
         now = datetime.now().isoformat(timespec="seconds")
         conn = get_db()
-        conn.execute("UPDATE users SET profile_views = profile_views + 1 WHERE id=?", (user_id,))
         conn.execute(
-            "INSERT INTO profile_view_events (user_id, viewed_at) VALUES (?, ?)", (user_id, now)
+            "UPDATE users SET profile_views = profile_views + 1 WHERE id=?", (user_id,)
+        )
+        conn.execute(
+            "INSERT INTO profile_view_events (user_id, viewed_at) VALUES (?, ?)",
+            (user_id, now),
         )
         conn.commit()
         conn.close()
 
     def get_profile_view_count(self, user_id):
         conn = get_db()
-        row = conn.execute("SELECT profile_views FROM users WHERE id=?", (user_id,)).fetchone()
+        row = conn.execute(
+            "SELECT profile_views FROM users WHERE id=?", (user_id,)
+        ).fetchone()
         conn.close()
         return row["profile_views"] if row else 0
 

@@ -36,7 +36,9 @@ class LoginPage(QWidget):
 
         container = QWidget()
         container.setMaximumWidth(440)
-        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        container.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         layout = QVBoxLayout(container)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(14)
@@ -110,7 +112,9 @@ class RegisterPage(QWidget):
 
         container = QWidget()
         container.setMaximumWidth(440)
-        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        container.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         main_layout = QVBoxLayout(container)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.setContentsMargins(40, 80, 40, 80)
@@ -180,7 +184,9 @@ class RegisterPage(QWidget):
             elif "username too long" in err_msg:
                 self.err.setText("მომხმარებლის სახელი ზედმეტად გრძელია (მაქს. 20)!")
             elif "username format bad" in err_msg:
-                self.err.setText("სახელი უნდა შეიცავდეს მხოლოდ ლათინურ ასოებს, ციფრებს ან _")
+                self.err.setText(
+                    "სახელი უნდა შეიცავდეს მხოლოდ ლათინურ ასოებს, ციფრებს ან _"
+                )
             elif "email empty" in err_msg:
                 self.err.setText("ელ-ფოსტის ველი ცარიელია!")
             elif "invalid email" in err_msg:
@@ -229,7 +235,9 @@ class DashboardPage(QWidget):
         scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         content_widget = QWidget()
-        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        content_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
 
         layout = QVBoxLayout(content_widget)
         layout.setSpacing(6)  # მჭიდრო დაშორება ელემენტებს შორის
@@ -264,7 +272,9 @@ class DashboardPage(QWidget):
         # 🌟 ვქმნით კონტეინერს QR კოდისთვის
         qr_container = QHBoxLayout()
         qr_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        qr_container.setContentsMargins(0, 0, 0, 0)  # 👈 აშორებს შიდა დაშორებებს, რაც მაღლა სწევს კოდს
+        qr_container.setContentsMargins(
+            0, 0, 0, 0
+        )  # 👈 აშორებს შიდა დაშორებებს, რაც მაღლა სწევს კოდს
 
         self.qr_label = QLabel()
         self.qr_label.setMinimumSize(120, 120)
@@ -314,7 +324,9 @@ class DashboardPage(QWidget):
 
         self.list = QListWidget()
         self.list.setMinimumHeight(80)
-        self.list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.list.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         self.list.currentItemChanged.connect(self.pick_link)
         layout.addWidget(self.list)
 
@@ -327,7 +339,17 @@ class DashboardPage(QWidget):
         layout.addWidget(self.link_url)
 
         self.link_icon = QComboBox()
-        self.link_icon.addItems(["Default", "Facebook", "Instagram", "Twitter", "GitHub", "YouTube", "LinkedIn"])
+        self.link_icon.addItems(
+            [
+                "Default",
+                "Facebook",
+                "Instagram",
+                "Twitter",
+                "GitHub",
+                "YouTube",
+                "LinkedIn",
+            ]
+        )
         layout.addWidget(self.link_icon)
 
         self.link_type = QComboBox()
@@ -436,7 +458,9 @@ class DashboardPage(QWidget):
             return
 
         if u.profile_pic:
-            img_path = os.path.join(os.path.dirname(__file__), "static", "uploads", u.profile_pic)
+            img_path = os.path.join(
+                os.path.dirname(__file__), "static", "uploads", u.profile_pic
+            )
             if os.path.exists(img_path):
                 self.avatar_label.setPixmap(QPixmap(img_path))
             else:
@@ -511,7 +535,9 @@ class DashboardPage(QWidget):
                 self.link_title.setText(link.title)
                 self.link_url.setText(link.url)
                 self.link_icon.setCurrentText(link.icon if link.icon else "Default")
-                self.link_type.setCurrentText("Contact" if link.link_type == "contact" else "URL")
+                self.link_type.setCurrentText(
+                    "Contact" if link.link_type == "contact" else "URL"
+                )
                 self.link_slug.setText(link.slug or "")
                 self.link_group.setText(link.group_name or "")
                 self.link_start.setText(link.start_date or "")
@@ -531,7 +557,9 @@ class DashboardPage(QWidget):
     def add_link(self):
         try:
             self.logic.add_link(
-                self.link_title.text(), self.link_url.text(), self.link_icon.currentText(),
+                self.link_title.text(),
+                self.link_url.text(),
+                self.link_icon.currentText(),
                 **self._link_kwargs(),
             )
             self._clear_link_form()
@@ -555,8 +583,11 @@ class DashboardPage(QWidget):
             return
         try:
             self.logic.update_link(
-                self.selected_id, self.link_title.text(), self.link_url.text(),
-                self.link_icon.currentText(), **self._link_kwargs(),
+                self.selected_id,
+                self.link_title.text(),
+                self.link_url.text(),
+                self.link_icon.currentText(),
+                **self._link_kwargs(),
             )
             self.reload_list()
             self.msg.setText("updated")
@@ -584,7 +615,12 @@ class DashboardPage(QWidget):
             self.msg.setText("fail")
 
     def del_link(self):
-        r = QMessageBox.question(self, "?", "delete?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        r = QMessageBox.question(
+            self,
+            "?",
+            "delete?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
         if r != QMessageBox.StandardButton.Yes:
             return
         try:
@@ -605,7 +641,9 @@ class DashboardPage(QWidget):
             pass
 
     def choose_profile_pic(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Profile Picture", "", "Images (*.png *.jpg *.jpeg)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Profile Picture", "", "Images (*.png *.jpg *.jpeg)"
+        )
         if file_path:
             self.logic.upload_profile_pic(file_path)
             self.refresh()
@@ -635,7 +673,9 @@ class AnalyticsPage(QWidget):
         scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         content = QWidget()
-        content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        content.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         layout = QVBoxLayout(content)
         layout.setSpacing(10)
 
@@ -672,10 +712,14 @@ class AnalyticsPage(QWidget):
         layout.addWidget(lbl1)
 
         self.link_chart_fig = Figure(figsize=(5, 3), dpi=100)
-        self.link_chart_fig.subplots_adjust(left=0.28, right=0.95, top=0.92, bottom=0.12)
+        self.link_chart_fig.subplots_adjust(
+            left=0.28, right=0.95, top=0.92, bottom=0.12
+        )
         self.link_chart_canvas = FigureCanvas(self.link_chart_fig)
         self.link_chart_canvas.setMinimumHeight(180)
-        self.link_chart_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.link_chart_canvas.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         layout.addWidget(self.link_chart_canvas)
 
         self.time_lbl = _lbl(QLabel("Clicks over time (last 30 days)"), "sectionTitle")
@@ -683,7 +727,9 @@ class AnalyticsPage(QWidget):
 
         self.time_table = QTableWidget(0, 2)
         self.time_table.setHorizontalHeaderLabels(["Date", "Clicks"])
-        self.time_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.time_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
         self.time_table.setMinimumHeight(100)
         self.time_table.verticalHeader().setVisible(False)
         self.time_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -716,7 +762,9 @@ class AnalyticsPage(QWidget):
 
         if data["most_popular"]:
             _, title, clicks = data["most_popular"]
-            self.popular_lbl.setText(f"Most popular link ({days}d): {title} ({clicks} clicks)")
+            self.popular_lbl.setText(
+                f"Most popular link ({days}d): {title} ({clicks} clicks)"
+            )
         else:
             self.popular_lbl.setText(f"Most popular link ({days}d): —")
 
@@ -754,9 +802,14 @@ class AnalyticsPage(QWidget):
 
         if not stats:
             ax.text(
-                0.5, 0.5, "No link data yet",
-                ha="center", va="center", transform=ax.transAxes,
-                color=fg, fontsize=12,
+                0.5,
+                0.5,
+                "No link data yet",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                color=fg,
+                fontsize=12,
             )
             ax.set_xticks([])
             ax.set_yticks([])
@@ -781,7 +834,10 @@ class AnalyticsPage(QWidget):
                     bar.get_width() + offset,
                     bar.get_y() + bar.get_height() / 2,
                     str(count),
-                    va="center", ha="left", color=fg, fontsize=9,
+                    va="center",
+                    ha="left",
+                    color=fg,
+                    fontsize=9,
                 )
 
         self.link_chart_canvas.draw()
@@ -798,11 +854,14 @@ class AnalyticsPage(QWidget):
             user = self.logic.current_user
             name = user.username if user else "user"
             self.link_chart_fig.savefig(
-                path, dpi=150, bbox_inches="tight",
+                path,
+                dpi=150,
+                bbox_inches="tight",
                 facecolor=self.link_chart_fig.patch.get_facecolor(),
             )
             QMessageBox.information(
-                self, "Exported",
+                self,
+                "Exported",
                 f"Analytics chart saved to:\n{path}\n({name}, last {self.analytics_days} days)",
             )
         except Exception as e:
@@ -831,8 +890,12 @@ class MainWindow(QMainWindow):
         logo_path = os.path.join(os.path.dirname(__file__), "static", "logo.png")
 
         if os.path.exists(logo_path):
-            pix = QPixmap(logo_path).scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio,
-                                            Qt.TransformationMode.SmoothTransformation)
+            pix = QPixmap(logo_path).scaled(
+                150,
+                150,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
             self.logo_label.setPixmap(pix)
         else:
             self.logo_label.setText("LinkVerse")
@@ -849,7 +912,9 @@ class MainWindow(QMainWindow):
 
         # ვაბრუნებთ StackedWidget-ს (გვერდების გადასართველად) ლოგოს ქვემოთ
         self.stack = QStackedWidget()
-        self.stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         main_layout.addWidget(self.stack, 1)
 
         self.login_page = LoginPage(logic)
